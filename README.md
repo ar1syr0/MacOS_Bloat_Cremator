@@ -1,6 +1,6 @@
 # macOS Full Bloat Cremator 
 ### by ar1syr0 x claude
-
+### “Note that I made this for my personal use. I’m publishing it for inspiration, and I’m sure someone can do it better.”
 ---
 
 > I was tired of opening Launchpad and seeing Stocks, Chess, and Tips staring back at me
