@@ -56,15 +56,6 @@ Respectable in theory. Annoying when you're trying to evict Chess.app.
    ```
 7. Restart normally
 
-**Intel Mac:**
-
-1. Restart and hold **Cmd + R** until the Apple logo appears
-2. Go to **Utilities → Terminal**
-3. Run:
-   ```
-   csrutil disable
-   ```
-4. Restart normally
 
 ---
 
