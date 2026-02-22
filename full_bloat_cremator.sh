@@ -242,9 +242,7 @@ disable_service user 'com.apple.homed'
 disable_service user 'com.apple.photoanalysisd'
 disable_service user 'com.apple.photolibraryd'
 disable_service user 'com.apple.mediastream.mstreamd'
-disable_service user 'com.apple.chronod'
 disable_service user 'com.apple.followupd'
-disable_service user 'com.apple.progressd'
 disable_service user 'com.apple.tipsd'
 disable_service user 'com.apple.helpd'
 
@@ -255,7 +253,6 @@ disable_service user 'com.apple.ap.promotedcontentd'
 section "Accessibility and Motion"
 disable_service user 'com.apple.accessibility.MotionTrackingAgent'
 disable_service user 'com.apple.accessibility.axassetsd'
-disable_service user 'com.apple.universalaccessd'
 disable_service user 'com.apple.voicebankingd'
 
 section "Family and Screen Time"
@@ -267,7 +264,6 @@ disable_service user 'com.apple.macos.studentd'
 
 section "Data and Context"
 disable_service user 'com.apple.dataaccess.dataaccessd'
-disable_service user 'com.apple.ContextStoreAgent'
 disable_service user 'com.apple.duetexpertd'
 disable_service user 'com.apple.suggestd'
 disable_service user 'com.apple.ManagedClientAgent.enrollagent'
