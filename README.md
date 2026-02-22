@@ -1,6 +1,6 @@
 # macOS Full Bloat Cremator 
 ### by ar1syr0 x claude
-### “Note/Disclaimer: I made this for my personal use. I’m publishing it for inspiration...”
+### “Disclaimer: I made this for my personal use. I’m publishing it for inspiration....”
 ---
 
 > I was tired of opening Launchpad and seeing Stocks, Chess, and Tips staring back at me
@@ -169,13 +169,6 @@ The script will:
 
 **Reboot your Mac.** This is not optional. Services are disabled at the launchd level
 and the remounted system volume needs to reseal properly on restart.
-
-After reboot, verify services are gone:
-```zsh
-launchctl list | grep -E "assistantd|analyticsd|BiomeAgent"
-```
-
-If nothing appears — they're dead. Pour one out.
 
 ---
 
