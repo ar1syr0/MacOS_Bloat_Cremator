@@ -1,6 +1,6 @@
 # macOS Full Bloat Cremator 
 ### by ar1syr0 x claude
-### “Note that I made this for my personal use. I’m publishing it for inspiration, and I’m sure someone can do it better.”
+### “Note/Disclaimer: I made this for my personal use. I’m publishing it for inspiration...”
 ---
 
 > I was tired of opening Launchpad and seeing Stocks, Chess, and Tips staring back at me
@@ -218,5 +218,15 @@ Re-enable FileVault if you want it back:
 | Run the script | `zsh ~/full_bloat_cremator.sh` |
 
 ---
+
+### Example/Gui Snippets
+
+![Start](image.png)
+
+![AppRemovalimage](image%201.png)
+
+![End](image%202.png)
+
+ 
 
 *ar1syr0 x claude. Built out of spite, refined out of necessity.*
