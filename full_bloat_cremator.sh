@@ -1,5 +1,5 @@
 #!/bin/zsh
-#      macOS Full Bloat Cremator by ar1syr0 x Claude 2026   
+#      macOS Bloat Cremator by ar1syr0 x Claude 2026   
 #      Kills background services AND removes unwanted apps      
 #      Run with: zsh full_bloat_cremator.sh    
 #
@@ -45,7 +45,7 @@ BLESS=/usr/sbin/bless
 # -------------------------------------------------------
 echo ""
 echo "================================================================"
-echo "   macOS Safe Cremator — ar1syr0 x Claude 2026"
+echo "   macOS Bloat Cremator by ar1syr0 x Claude 2026 "
 echo "   Use at your own risk "
 echo "================================================================"
 echo ""
