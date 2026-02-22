@@ -1,12 +1,12 @@
 #!/bin/zsh
 #      macOS Full Bloat Cremator by ar1syr0 x Claude 2026   
 #      Kills background services AND removes unwanted apps      
-#       Run with: zsh full_bloat_cremator.sh    
+#      Run with: zsh full_bloat_cremator.sh    
 #
-#    This process requires disabling core macOS security features. That's not a warning to scare you off —
-# it's a warning so you don't brick your machine and blame me. Do it wrong and you'll be staring at a flashing folder of doom.
+# This process requires disabling core macOS security features. That's not a warning to scare you off —
+# It's a warning so you don't brick your machine and blame me. Do it wrong and you'll be staring at a flashing folder of doom.
 #
-# Prerequisites:
+# Prerequisites for app removal only:
 #   1. Disable FileVault (System Settings > Privacy & Security)
 #   2. Boot into Recovery and run:
 #        csrutil disable
@@ -45,12 +45,11 @@ BLESS=/usr/sbin/bless
 # -------------------------------------------------------
 echo ""
 echo "================================================================"
-echo "   macOS Safe Cremator — ar1syr0 x Perplexity 2026"
-echo "   Telemetry · AI · Ads · Unused Apple services & apps"
-echo "   Safe: display, wake & core system fully preserved"
+echo "   macOS Safe Cremator — ar1syr0 x Claude 2026"
+echo "   Use at your own risk "
 echo "================================================================"
 echo ""
-echo "  Prerequisites:"
+echo "  Prerequisites (for App removal only):"
 echo "    1. FileVault disabled"
 echo "    2. In Recovery: csrutil disable"
 echo "    3. In Recovery: csrutil authenticated-root disable"
