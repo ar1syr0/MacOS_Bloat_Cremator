@@ -223,9 +223,6 @@ disable_service user 'com.apple.screensharing.menuextra'
 disable_service user 'com.apple.screensharing.MessagesAgent'
 disable_service user 'com.apple.sidecar-hid-relay'
 disable_service user 'com.apple.sidecar-relay'
-disable_service user 'com.apple.rapportd'
-disable_service user 'com.apple.rapportd-user'
-disable_service user 'com.apple.sharingd'
 disable_service user 'com.apple.SSInvitationAgent'
 
 section "Apple Apps and Services"
@@ -292,7 +289,6 @@ disable_service system 'com.apple.triald.system'
 
 section "Apple Intelligence"
 disable_service system 'com.apple.modelmanagerd'
-disable_service system 'com.apple.coreduetd'
 
 section "iCloud and Sync"
 disable_service system 'com.apple.cloudd'
