@@ -221,7 +221,7 @@ Re-enable FileVault if you want it back:
 
 ### Example/Gui Snippets
 
-![Start](image.png)
+![Start](imagex.png)
 
 ![AppRemovalimage](image%201.png)
 
