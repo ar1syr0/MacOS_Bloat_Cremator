@@ -41,16 +41,13 @@ UNAME=/usr/bin/uname
 BLESS=/usr/sbin/bless
 
 # -------------------------------------------------------
-# Printed banner
+# Banner
 # -------------------------------------------------------
 echo ""
 echo "================================================================"
-echo "   macOS Full Bloat Cremator by ar1syr0 x Claude 2026"
-echo "   Kills background services AND removes unwanted apps"
-echo "   Run with: zsh full_bloat_cremator.sh"
-echo "   Disclaimer: Created for Personal Use"
-echo "   process requires disabling core macOS security features"
-echo "   don't brick your machine and blame me"
+echo "   macOS Safe Cremator — ar1syr0 x Perplexity 2026"
+echo "   Telemetry · AI · Ads · Unused Apple services & apps"
+echo "   Safe: display, wake & core system fully preserved"
 echo "================================================================"
 echo ""
 echo "  Prerequisites:"
@@ -59,98 +56,99 @@ echo "    2. In Recovery: csrutil disable"
 echo "    3. In Recovery: csrutil authenticated-root disable"
 echo ""
 echo "  To revert services:"
-echo "    sudo rm -r /private/var/db/com.apple.xpc.launchd/*"
+echo "    sudo rm -f /private/var/db/com.apple.xpc.launchd/disabled.plist"
+echo "    sudo rm -f /private/var/db/com.apple.xpc.launchd/disabled.501.plist"
 echo "    Then reboot."
 echo ""
 echo "  To revert apps:"
 echo "    Reinstall from App Store or Time Machine."
-echo "    System apps return automatically after macOS updates."
+echo "    System apps return after macOS updates."
 echo ""
 echo "================================================================"
 echo ""
 
 # -------------------------------------------------------
-# Grab sudo upfront and keep it alive throughout
+# Grab sudo upfront and keep it alive
 # -------------------------------------------------------
 echo "  Requesting sudo privileges..."
-echo ""
 $SUDO -v || { echo "  ERROR: sudo failed. Are you an admin?"; exit 1; }
 while true; do $SUDO -n true; $SLEEP 60; kill -0 "$$" || exit; done 2>/dev/null &
+echo ""
 
 # -------------------------------------------------------
-# PHASE 1 — Kill background services
+# Phase selection dialog
 # -------------------------------------------------------
+PHASE_CHOICE=$($OSASCRIPT_BIN <<APPLE_EOF
+set choice to button returned of (display dialog "What would you like to do?" with title "Mac Safe Cremator — ar1syr0" buttons {"Both Phases", "Services Only", "Apps Only"} default button "Both Phases")
+return choice
+APPLE_EOF
+)
+
+echo "  Running: $PHASE_CHOICE"
+echo ""
+
+RUN_PHASE1=false
+RUN_PHASE2=false
+
+if   [[ "$PHASE_CHOICE" == "Both Phases"   ]]; then RUN_PHASE1=true; RUN_PHASE2=true
+elif [[ "$PHASE_CHOICE" == "Services Only" ]]; then RUN_PHASE1=true
+elif [[ "$PHASE_CHOICE" == "Apps Only"     ]]; then RUN_PHASE2=true
+fi
+
+# ===============================================================
+# PHASE 1 — Safe service disabling
+# ===============================================================
+TOTAL=0; DISABLED=0; ALREADY_OFF=0; FAILED=0
+
+if [[ "$RUN_PHASE1" == true ]]; then
+
 echo "================================================================"
-echo "  PHASE 1 — Terminating background services"
+echo "  PHASE 1 — Disabling safe services"
+echo "  (Telemetry · AI · Siri · Ads · Unused Apple daemons)"
 echo "================================================================"
 echo ""
 
-TOTAL=0
-DISABLED=0
-ALREADY_OFF=0
-FAILED=0
-
-# -------------------------------------------------------
-# Cache plist state once using plutil -p
-# Format: "com.apple.service" => 1  (disabled)
-#         "com.apple.service" => 0  (enabled)
-# Much more reliable than parsing launchctl print-disabled
-# output which varies across macOS versions
-# -------------------------------------------------------
 USER_PLIST="/private/var/db/com.apple.xpc.launchd/disabled.501.plist"
 SYSTEM_PLIST="/private/var/db/com.apple.xpc.launchd/disabled.plist"
 
 echo "  Caching current service state..."
-USER_PLIST_CACHE=$($PLUTIL -p "$USER_PLIST" 2>/dev/null || echo "")
-SYSTEM_PLIST_CACHE=$($SUDO $PLUTIL -p "$SYSTEM_PLIST" 2>/dev/null || echo "")
-echo "  Done. Starting service cremation..."
+USER_CACHE=$($PLUTIL -p "$USER_PLIST" 2>/dev/null || echo "")
+SYSTEM_CACHE=$($SUDO $PLUTIL -p "$SYSTEM_PLIST" 2>/dev/null || echo "")
+echo "  Done. Starting cremation..."
 echo ""
 
-# -------------------------------------------------------
-# Core disable function
-# Checks plist cache first to accurately detect
-# already-disabled services on repeat runs
-# -------------------------------------------------------
 disable_service() {
   local type="$1"
   local name="$2"
   TOTAL=$((TOTAL + 1))
-
   if [[ "$type" == "user" ]]; then
-    if echo "$USER_PLIST_CACHE" | $GREP -qF "\"${name}\" => 1"; then
+    if echo "$USER_CACHE" | $GREP -qF "\"${name}\" => 1"; then
       ALREADY_OFF=$((ALREADY_OFF + 1))
-      echo "    [skip] ${name}"
-      return
+      echo "    [skip] ${name}"; return
     fi
     $LAUNCHCTL bootout gui/501/${name} 2>/dev/null
     $LAUNCHCTL disable gui/501/${name} 2>/dev/null
-    DISABLED=$((DISABLED + 1))
-    echo "    [off]  ${name}"
   else
-    if echo "$SYSTEM_PLIST_CACHE" | $GREP -qF "\"${name}\" => 1"; then
+    if echo "$SYSTEM_CACHE" | $GREP -qF "\"${name}\" => 1"; then
       ALREADY_OFF=$((ALREADY_OFF + 1))
-      echo "    [skip] ${name}"
-      return
+      echo "    [skip] ${name}"; return
     fi
     $SUDO $LAUNCHCTL bootout system/${name} 2>/dev/null
     $SUDO $LAUNCHCTL disable system/${name} 2>/dev/null
-    DISABLED=$((DISABLED + 1))
-    echo "    [off]  ${name}"
   fi
+  DISABLED=$((DISABLED + 1))
+  echo "    [off]  ${name}"
 }
 
-section() {
-  echo ""
-  echo "  -- $1 --"
-}
+section() { echo ""; echo "  -- $1 --"; }
 
-# ===============================================================
-# USER-LEVEL AGENTS (gui/501)
-# ===============================================================
+# ================================================================
+# USER AGENTS
+# ================================================================
 echo "  USER AGENTS"
 echo "  -------------------------------------------------------"
 
-section "Siri and AI"
+section "Siri and Voice"
 disable_service user 'com.apple.assistant_service'
 disable_service user 'com.apple.assistantd'
 disable_service user 'com.apple.assistant_cdmd'
@@ -161,6 +159,7 @@ disable_service user 'com.apple.siriinferenced'
 disable_service user 'com.apple.sirittsd'
 disable_service user 'com.apple.SiriTTSTrainingAgent'
 disable_service user 'com.apple.siriknowledged'
+disable_service user 'com.apple.voicebankingd'
 
 section "Apple Intelligence"
 disable_service user 'com.apple.intelligenceflowd'
@@ -172,85 +171,37 @@ disable_service user 'com.apple.naturallanguaged'
 disable_service user 'com.apple.knowledgeconstructiond'
 disable_service user 'com.apple.knowledge-agent'
 
-section "Analytics and Telemetry"
-disable_service user 'com.apple.geoanalyticsd'
-disable_service user 'com.apple.inputanalyticsd'
+section "Telemetry and Analytics"
 disable_service user 'com.apple.BiomeAgent'
 disable_service user 'com.apple.biomesyncd'
 disable_service user 'com.apple.UsageTrackingAgent'
 disable_service user 'com.apple.triald'
 disable_service user 'com.apple.parsec-fbf'
 disable_service user 'com.apple.parsecd'
-
-section "iCloud and Sync"
-disable_service user 'com.apple.cloudd'
-disable_service user 'com.apple.cloudpaird'
-disable_service user 'com.apple.cloudphotod'
-disable_service user 'com.apple.CloudSettingsSyncAgent'
-disable_service user 'com.apple.iCloudNotificationAgent'
-disable_service user 'com.apple.icloudmailagent'
-disable_service user 'com.apple.iCloudUserNotifications'
-disable_service user 'com.apple.icloud.searchpartyuseragent'
-disable_service user 'com.apple.itunescloudd'
-disable_service user 'com.apple.protectedcloudstorage.protectedcloudkeysyncing'
-disable_service user 'com.apple.security.cloudkeychainproxy3'
-disable_service user 'com.apple.replicatord'
-
-section "Location and Routing"
-disable_service user 'com.apple.CoreLocationAgent'
-disable_service user 'com.apple.routined'
-disable_service user 'com.apple.geodMachServiceBridge'
-disable_service user 'com.apple.navd'
-disable_service user 'com.apple.Maps.pushdaemon'
-disable_service user 'com.apple.Maps.mapssyncd'
-disable_service user 'com.apple.maps.destinationd'
-
-section "Find My"
-disable_service user 'com.apple.findmy.findmylocateagent'
-
-section "Messages, FaceTime and Calls"
-disable_service user 'com.apple.imagent'
-disable_service user 'com.apple.imautomatichistorydeletionagent'
-disable_service user 'com.apple.imtransferagent'
-disable_service user 'com.apple.avconferenced'
-disable_service user 'com.apple.CallHistoryPluginHelper'
-disable_service user 'com.apple.telephonyutilities.callservicesd'
-disable_service user 'com.apple.CommCenter-osx'
-
-section "Screen Sharing and Continuity"
-disable_service user 'com.apple.screensharing.agent'
-disable_service user 'com.apple.screensharing.menuextra'
-disable_service user 'com.apple.screensharing.MessagesAgent'
-disable_service user 'com.apple.sidecar-hid-relay'
-disable_service user 'com.apple.sidecar-relay'
-disable_service user 'com.apple.SSInvitationAgent'
-
-section "Apple Apps and Services"
-disable_service user 'com.apple.gamed'
-disable_service user 'com.apple.financed'
-disable_service user 'com.apple.newsd'
-disable_service user 'com.apple.weatherd'
-disable_service user 'com.apple.watchlistd'
-disable_service user 'com.apple.videosubscriptionsd'
-disable_service user 'com.apple.passd'
-disable_service user 'com.apple.remindd'
-disable_service user 'com.apple.calaccessd'
-disable_service user 'com.apple.homed'
-disable_service user 'com.apple.photoanalysisd'
-disable_service user 'com.apple.photolibraryd'
-disable_service user 'com.apple.mediastream.mstreamd'
-disable_service user 'com.apple.followupd'
-disable_service user 'com.apple.tipsd'
-disable_service user 'com.apple.helpd'
+disable_service user 'com.apple.inputanalyticsd'
+disable_service user 'com.apple.geoanalyticsd'
 
 section "Ads and Promotions"
 disable_service user 'com.apple.ap.adprivacyd'
 disable_service user 'com.apple.ap.promotedcontentd'
 
-section "Accessibility and Motion"
+section "Suggestions"
+disable_service user 'com.apple.suggestd'
+disable_service user 'com.apple.duetexpertd'
+disable_service user 'com.apple.followupd'
+
+section "Unused Apple App Daemons"
+disable_service user 'com.apple.newsd'
+disable_service user 'com.apple.tipsd'
+disable_service user 'com.apple.financed'
+disable_service user 'com.apple.gamed'
+disable_service user 'com.apple.watchlistd'
+disable_service user 'com.apple.videosubscriptionsd'
+disable_service user 'com.apple.mediastream.mstreamd'
+
+section "Accessibility Telemetry"
 disable_service user 'com.apple.accessibility.MotionTrackingAgent'
 disable_service user 'com.apple.accessibility.axassetsd'
-disable_service user 'com.apple.voicebankingd'
 
 section "Family and Screen Time"
 disable_service user 'com.apple.familycircled'
@@ -259,71 +210,51 @@ disable_service user 'com.apple.familynotificationd'
 disable_service user 'com.apple.ScreenTimeAgent'
 disable_service user 'com.apple.macos.studentd'
 
-section "Data and Context"
-disable_service user 'com.apple.dataaccess.dataaccessd'
-disable_service user 'com.apple.duetexpertd'
-disable_service user 'com.apple.suggestd'
+section "MDM and Trial"
 disable_service user 'com.apple.ManagedClientAgent.enrollagent'
 
-section "QuickLook"
-disable_service user 'com.apple.quicklook'
-disable_service user 'com.apple.quicklook.ui.helper'
-disable_service user 'com.apple.quicklook.ThumbnailsAgent'
-
-section "Time Machine"
-disable_service user 'com.apple.TMHelperAgent'
-
-# ===============================================================
-# SYSTEM-LEVEL DAEMONS
-# ===============================================================
+# ================================================================
+# SYSTEM DAEMONS
+# ================================================================
 echo ""
 echo "  SYSTEM DAEMONS"
 echo "  -------------------------------------------------------"
 
-section "Analytics and Telemetry"
+section "Telemetry and Analytics"
 disable_service system 'com.apple.analyticsd'
 disable_service system 'com.apple.audioanalyticsd'
 disable_service system 'com.apple.wifianalyticsd'
 disable_service system 'com.apple.ecosystemanalyticsd'
 disable_service system 'com.apple.triald.system'
 
-section "Apple Intelligence"
+section "Apple Intelligence (system)"
 disable_service system 'com.apple.modelmanagerd'
 
-section "iCloud and Sync"
-disable_service system 'com.apple.cloudd'
-disable_service system 'com.apple.icloud.searchpartyd'
-
-section "Location"
-disable_service system 'com.apple.locationd'
-
-section "Find My"
-disable_service system 'com.apple.findmymac'
-disable_service system 'com.apple.findmymacmessenger'
-disable_service system 'com.apple.findmy.findmybeaconingd'
-
-section "Backups"
-disable_service system 'com.apple.backupd'
-disable_service system 'com.apple.backupd-helper'
-
-section "Screen Sharing"
-disable_service system 'com.apple.screensharing'
-
-section "Family Controls"
-disable_service system 'com.apple.familycontrols'
-
-section "Networking"
-disable_service system 'com.apple.netbiosd'
-disable_service system 'com.apple.dhcp6d'
-disable_service system 'com.apple.ftp-proxy'
-
-section "Miscellaneous"
+section "Game Controller"
 disable_service system 'com.apple.GameController.gamecontrollerd'
-disable_service system 'com.apple.biomed'
 
-# -------------------------------------------------------
-# Phase 1 summary
-# -------------------------------------------------------
+# ================================================================
+# INTENTIONALLY KEPT ALIVE — DO NOT DISABLE
+# ================================================================
+# com.apple.universalaccessd     WindowServer rendering hooks
+# com.apple.ContextStoreAgent    Display context across sleep/wake
+# com.apple.progressd            WindowServer UI dependency
+# com.apple.chronod              Display event scheduling
+# com.apple.rapportd             Device proximity / wake triggers
+# com.apple.rapportd-user        Device proximity / wake triggers
+# com.apple.sharingd             Sleep/wake handshake
+# com.apple.coreduetd            Power/wake state decisions
+# com.apple.locationd            Location-based wake triggers
+# com.apple.cloudd               iCloud core sync
+# com.apple.photolibraryd        Photos library integrity
+# com.apple.quicklook*           Finder previews
+# com.apple.homed                HomeKit state
+# com.apple.remindd              Reminders notifications
+# com.apple.calaccessd           Calendar data integrity
+# com.apple.imagent              iMessage delivery
+# com.apple.CoreLocationAgent    Maps / location services
+# ================================================================
+
 echo ""
 echo "================================================================"
 echo "  PHASE 1 COMPLETE"
@@ -334,30 +265,34 @@ echo "  Disabled now      : $DISABLED"
 echo "  Already disabled  : $ALREADY_OFF"
 echo "  Failed            : $FAILED"
 echo ""
-echo "  Changes saved to:"
-echo "  /private/var/db/com.apple.xpc.launchd/disabled.plist"
+echo "  Preserved (wake/display/core):"
+echo "  universalaccessd, coreduetd, ContextStoreAgent, progressd,"
+echo "  chronod, rapportd, sharingd, locationd, cloudd, quicklook*"
 echo ""
-if [[ $FAILED -gt 0 ]]; then
-  echo "  NOTE: $FAILED service(s) could not be disabled."
-  echo "  This is usually fine — they may not exist on this macOS version."
-  echo ""
-fi
 echo "================================================================"
 echo ""
 
 $SLEEP 1
 
-# -------------------------------------------------------
+else
+  echo "================================================================"
+  echo "  PHASE 1 — Skipped"
+  echo "================================================================"
+  echo ""
+fi
+
+# ===============================================================
 # PHASE 2 — Dynamic app removal
-# -------------------------------------------------------
+# ===============================================================
+APP_REMOVED=0; APP_FAILED=0; SELECTED=""
+
+if [[ "$RUN_PHASE2" == true ]]; then
+
 echo "================================================================"
 echo "  PHASE 2 — App removal"
 echo "================================================================"
 echo ""
 
-# -------------------------------------------------------
-# Protected apps — never shown in removal dialog
-# -------------------------------------------------------
 PROTECTED=(
   "Finder" "Safari" "System Preferences" "System Settings"
   "App Store" "Terminal" "Activity Monitor" "Disk Utility"
@@ -374,56 +309,39 @@ PROTECTED=(
 
 is_protected() {
   local check="$1"
-  for p in "${PROTECTED[@]}"; do
-    [[ "$check" == "$p" ]] && return 0
-  done
+  for p in "${PROTECTED[@]}"; do [[ "$check" == "$p" ]] && return 0; done
   return 1
 }
 
-# -------------------------------------------------------
-# Get root APFS device — strips snapshot suffix
-# e.g. /dev/disk3s1s1 -> /dev/disk3s1
-# -------------------------------------------------------
 get_root_device() {
   $MOUNT | $GREP " on / " | $AWK '{print $1}' | $SED 's/s[0-9]*$//'
 }
 
-APP_REMOVED=0
-APP_FAILED=0
 MOUNTPOINT="$HOME/.bloat_mount_tmp"
 
-# -------------------------------------------------------
-# Remove app via direct APFS device mount + bless
-# sudo mount -uw / does not work on macOS Big Sur+
-# -------------------------------------------------------
 remove_app() {
   local apppath="$1"
   local appname="$2"
-
   ROOT_DEV=$(get_root_device)
 
   if [[ -z "$ROOT_DEV" ]]; then
     echo "    ERROR: Could not determine root APFS device."
-    APP_FAILED=$((APP_FAILED + 1))
-    return 1
+    APP_FAILED=$((APP_FAILED + 1)); return 1
   fi
 
   echo "    Device     : $ROOT_DEV"
   echo "    Mountpoint : $MOUNTPOINT"
-
   $MKDIR -p "$MOUNTPOINT"
 
   $SUDO $MOUNT -o nobrowse -t apfs "$ROOT_DEV" "$MOUNTPOINT"
   if [[ $? -ne 0 ]]; then
     echo "    ERROR: Could not mount $ROOT_DEV"
-    echo "    Ensure both csrutil and authenticated-root are disabled in Recovery."
+    echo "    Ensure csrutil and authenticated-root are disabled in Recovery."
     $RMDIR "$MOUNTPOINT" 2>/dev/null
-    APP_FAILED=$((APP_FAILED + 1))
-    return 1
+    APP_FAILED=$((APP_FAILED + 1)); return 1
   fi
 
   local mounted_app="${MOUNTPOINT}/${apppath#/}"
-
   echo "    Removing   : $mounted_app"
   $SUDO $RM -rf "$mounted_app"
 
@@ -431,8 +349,7 @@ remove_app() {
     echo "    ERROR: $appname still exists after removal."
     $SUDO $UMOUNT "$MOUNTPOINT"
     $RMDIR "$MOUNTPOINT" 2>/dev/null
-    APP_FAILED=$((APP_FAILED + 1))
-    return 1
+    APP_FAILED=$((APP_FAILED + 1)); return 1
   fi
 
   echo "    Blessing new snapshot..."
@@ -444,22 +361,15 @@ remove_app() {
       --bootefi --create-snapshot
   fi
 
-  if [[ $? -ne 0 ]]; then
-    echo "    WARNING: bless failed — deletion may not survive reboot."
-  else
-    echo "    Snapshot blessed."
-  fi
+  [[ $? -ne 0 ]] && echo "    WARNING: bless failed — deletion may not survive reboot." \
+                 || echo "    Snapshot blessed."
 
   $SUDO $UMOUNT "$MOUNTPOINT"
   $RMDIR "$MOUNTPOINT" 2>/dev/null
-
   echo "    Done: $appname removed"
   APP_REMOVED=$((APP_REMOVED + 1))
 }
 
-# -------------------------------------------------------
-# Scan app directories
-# -------------------------------------------------------
 echo "  Scanning installed apps..."
 echo ""
 
@@ -492,22 +402,21 @@ echo ""
 echo "  Found $FOUND_COUNT removable app(s)."
 echo ""
 
-# -------------------------------------------------------
-# Show dialog if apps were found, otherwise skip
-# Heredoc delimiter renamed to APPLE_EOF to avoid
-# any conflict with the $OSASCRIPT_BIN variable
-# -------------------------------------------------------
-SELECTED=""
-
 if [[ $FOUND_COUNT -gt 0 ]]; then
   SELECTED=$($OSASCRIPT_BIN <<APPLE_EOF
 set appList to {${APPLESCRIPT_ITEMS}}
-set chosen to choose from list appList with title "Mac Cremator - Phase 2 - ar1syr0" with prompt "Select apps to remove. Hold Cmd to select multiple.
+set chosen to choose from list appList ¬
+  with title "Mac Safe Cremator — Phase 2 — ar1syr0" ¬
+  with prompt "Select apps to remove. Hold Cmd to select multiple.
 
 [returns after updates] = removed now, comes back after macOS updates
 [permanent] = gone for good, reinstall from App Store to restore
 
-No undo. Choose carefully." OK button name "Remove Selected" cancel button name "Skip" with multiple selections allowed without empty selection allowed
+No undo. Choose carefully." ¬
+  OK button name "Remove Selected" ¬
+  cancel button name "Skip" ¬
+  with multiple selections allowed ¬
+  without empty selection allowed
 if chosen is false then return ""
 set output to ""
 repeat with theItem in chosen
@@ -518,9 +427,6 @@ APPLE_EOF
   )
 fi
 
-# -------------------------------------------------------
-# Process selections
-# -------------------------------------------------------
 if [[ -z "$SELECTED" ]]; then
   echo "  App removal skipped."
   echo ""
@@ -530,18 +436,13 @@ else
 
   while IFS= read -r chosen; do
     [[ -z "${chosen// }" ]] && continue
-    chosen="${chosen## }"
-    chosen="${chosen%% }"
-
+    chosen="${chosen## }"; chosen="${chosen%% }"
     name="${chosen% \[returns after updates\]}"
     name="${name% \[permanent\]}"
-    name="${name## }"
-    name="${name%% }"
-
+    name="${name## }"; name="${name%% }"
     [[ -z "$name" ]] && continue
 
     path="${APP_PATHS[$name]}"
-
     if [[ -z "$path" || ! -e "$path" ]]; then
       for dir in "/System/Applications" "/Applications"; do
         [[ -d "${dir}/${name}.app" ]] && path="${dir}/${name}.app" && break
@@ -555,7 +456,6 @@ else
       APP_FAILED=$((APP_FAILED + 1))
     fi
     echo ""
-
   done <<< "$SELECTED"
 
   echo "  Apps removed  : $APP_REMOVED"
@@ -563,20 +463,31 @@ else
   echo ""
 fi
 
+else
+  echo "================================================================"
+  echo "  PHASE 2 — Skipped"
+  echo "================================================================"
+  echo ""
+fi
+
 # -------------------------------------------------------
 # Final summary
 # -------------------------------------------------------
 echo "================================================================"
-echo "  ALL DONE !"
+echo "  ALL DONE, ar1syr0."
 echo "================================================================"
 echo ""
 echo "  Phase 1 — Services"
-echo "    Disabled now     : $DISABLED"
-echo "    Already disabled : $ALREADY_OFF"
-echo "    Failed           : $FAILED"
+if [[ "$RUN_PHASE1" == true ]]; then
+  echo "    Disabled now     : $DISABLED"
+  echo "    Already disabled : $ALREADY_OFF"
+  echo "    Failed           : $FAILED"
+else
+  echo "    Skipped"
+fi
 echo ""
 echo "  Phase 2 — Apps"
-if [[ -n "$SELECTED" ]]; then
+if [[ "$RUN_PHASE2" == true && -n "$SELECTED" ]]; then
   echo "    Removed          : $APP_REMOVED"
   echo "    Failed           : $APP_FAILED"
 else
@@ -586,10 +497,12 @@ echo ""
 echo "  Reboot your Mac to apply all changes."
 echo ""
 echo "  To undo services:"
-echo "    sudo rm -r /private/var/db/com.apple.xpc.launchd/*"
+echo "    sudo rm -f /private/var/db/com.apple.xpc.launchd/disabled.plist"
+echo "    sudo rm -f /private/var/db/com.apple.xpc.launchd/disabled.501.plist"
 echo "    Then reboot."
 echo ""
 echo "================================================================"
 echo ""
+
 
 # ar1syr0 x Claude — 2026
