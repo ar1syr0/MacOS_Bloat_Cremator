@@ -12,7 +12,7 @@
 
 ## Before You Touch Anything — Read This
 
-This process requires disabling core macOS security features.
+This process requires disabling core macOS security features (for the app removal part).
 That's not a warning to scare you off — it's a warning so you don't brick your machine
 and blame me. Do it wrong and you'll be staring at a flashing folder of doom.
 
@@ -222,4 +222,4 @@ Re-enable FileVault if you want it back:
 
  
 
-*ar1syr0 x claude. Built out of spite, refined out of necessity.*
+*ar1syr0. Built out of spite, refined out of necessity.*
